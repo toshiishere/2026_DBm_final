@@ -1,0 +1,23 @@
+name: Backend and PostgreSQL
+on:
+  push:
+  pull_request:
+jobs:
+  integration:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build and start containers
+        run: docker compose up --build -d --wait
+      - name: Test database transactions and concurrency
+        run: docker compose --profile test run --build --rm test
+      - name: Check API health and OpenAPI
+        run: |
+          curl --fail http://localhost:8000/health
+          curl --fail http://localhost:8000/openapi.json --output /tmp/openapi.json
+      - name: Container logs
+        if: failure()
+        run: docker compose logs
+      - name: Clean up
+        if: always()
+        run: docker compose down -v
